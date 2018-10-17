@@ -608,12 +608,13 @@ Stmt While::make(Expr cond, Stmt contents, LoopKind kind,
 // Function
 Stmt Function::make(std::string name,
                     std::vector<Expr> outputs, std::vector<Expr> inputs,
-                    Stmt body) {
+                    Stmt body, bool accelerator) {
   Function *func = new Function;
   func->name = name;
   func->body = Scope::make(body);
   func->inputs = inputs;
   func->outputs = outputs;
+  func->accelerator = accelerator;
   return func;
 }
 

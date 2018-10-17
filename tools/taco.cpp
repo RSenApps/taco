@@ -590,6 +590,7 @@ int main(int argc, char* argv[]) {
   ir::Stmt assemble;
   ir::Stmt compute;
   ir::Stmt evaluate;
+  ir::Stmt computeKernel;
 
   Kernel kernel;
   if (benchmark) {
@@ -685,13 +686,14 @@ int main(int argc, char* argv[]) {
       IndexStmt stmt = makeConcrete(tensor.getAssignment());
 
       shared_ptr<ir::Module> module(new ir::Module);
-
       TOOL_BENCHMARK_TIMER(
         assemble = lower(stmt, "assemble", true, false);
         compute = lower(stmt, "compute",  false, true);
+        computeKernel = lower(stmt, "computeKernel",  false, true, true);
         evaluate = lower(stmt, "evaluate", true, true);
-
+          
         module->addFunction(assemble);
+        module->addFunction(computeKernel);
         module->addFunction(compute);
         module->addFunction(evaluate);
         module->compile();
@@ -734,6 +736,10 @@ int main(int argc, char* argv[]) {
   if (printCompute) {
     if (hasPrinted) {
       cout << endl;
+    }
+
+    if (computeKernel.defined()) {
+      printer.print(computeKernel);
     }
 
     if (compute.defined()) {

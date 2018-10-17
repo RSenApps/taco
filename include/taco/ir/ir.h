@@ -596,10 +596,11 @@ public:
   Stmt body;
   std::vector<Expr> inputs;
   std::vector<Expr> outputs;
+  bool accelerator;
   
   static Stmt make(std::string name,
                    std::vector<Expr> outputs, std::vector<Expr> inputs,
-                   Stmt body);
+                   Stmt body, bool accelerator=false);
   
   static const IRNodeType _type_info = IRNodeType::Function;
 };

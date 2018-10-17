@@ -42,7 +42,7 @@ private:
 /// that specifies how to lower different parts of a concrete index notation
 /// statement.
 ir::Stmt lower(IndexStmt stmt, std::string name,
-               bool assemble=true, bool compute=true,
+               bool assemble=true, bool compute=true, bool accelerator=false,
                Lowerer lowerer=Lowerer());
 
 /// Checks whether the an index statement can be lowered to C code.  If the

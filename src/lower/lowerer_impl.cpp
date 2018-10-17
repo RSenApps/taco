@@ -84,7 +84,7 @@ static Stmt declareScalarArgumentVar(TensorVar var, bool zero,
 }
 
 Stmt LowererImpl::lower(IndexStmt stmt, string name, bool assemble,
-                        bool compute) {
+                        bool compute, bool accelerator) {
   this->assemble = assemble;
   this->compute = compute;
 
@@ -201,6 +201,11 @@ Stmt LowererImpl::lower(IndexStmt stmt, string name, bool assemble,
   // Create function
   Stmt header = (headerStmts.size() > 0) ? Block::make(headerStmts) : Stmt();
   Stmt footer = (footerStmts.size() > 0) ? Block::make(footerStmts) : Stmt();
+  if (accelerator) {
+    return Function::make(name, resultsIR, argumentsIR,
+                        Block::blanks({header,
+                                       footer}), accelerator);
+  }
   return Function::make(name, resultsIR, argumentsIR,
                         Block::blanks({header,
                                        declareTemporaries,
@@ -208,7 +213,7 @@ Stmt LowererImpl::lower(IndexStmt stmt, string name, bool assemble,
                                        body,
                                        finalizeResultModes,
                                        postAllocValues,
-                                       footer}));
+                                       footer}), accelerator);
 }
 
 Stmt LowererImpl::lowerAssignment(Assignment assignment) {

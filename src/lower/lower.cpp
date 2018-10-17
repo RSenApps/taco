@@ -42,10 +42,10 @@ std::shared_ptr<LowererImpl> Lowerer::getLowererImpl() {
   return impl;
 }
 
-ir::Stmt lower(IndexStmt stmt, std::string name, bool assemble, bool compute,
+ir::Stmt lower(IndexStmt stmt, std::string name, bool assemble, bool compute, bool accelerator,
                Lowerer lowerer) {
   taco_iassert(isLowerable(stmt));
-  ir::Stmt lowered = lowerer.getLowererImpl()->lower(stmt, name, assemble, compute);
+  ir::Stmt lowered = lowerer.getLowererImpl()->lower(stmt, name, assemble, compute, accelerator);
   
   std::string messages;
   verify(lowered, &messages);
