@@ -618,6 +618,18 @@ Stmt Function::make(std::string name,
   return func;
 }
 
+// Kernel Launch
+Stmt KernelLaunch::make(std::string kernel_name,
+                    std::vector<Expr> outputs, std::vector<Expr> inputs,
+                    bool accelerator) {
+  KernelLaunch *launch = new KernelLaunch;
+  launch->kernel_name = kernel_name;
+  launch->outputs = outputs;
+  launch->inputs = inputs;
+  launch->accelerator = accelerator;
+  return launch;
+}
+
 // VarDecl
 Stmt VarDecl::make(Expr var, Expr rhs) {
   taco_iassert(var.as<Var>())
@@ -800,6 +812,8 @@ template<> void StmtNode<Scope>::accept(IRVisitorStrict *v)
     const { v->visit((const Scope*)this); }
 template<> void StmtNode<Function>::accept(IRVisitorStrict *v)
     const { v->visit((const Function*)this); }
+template<> void StmtNode<KernelLaunch>::accept(IRVisitorStrict *v)
+    const { v->visit((const KernelLaunch*)this); }
 template<> void StmtNode<VarDecl>::accept(IRVisitorStrict *v)
     const { v->visit((const VarDecl*)this); }
 template<> void StmtNode<Assign>::accept(IRVisitorStrict *v)

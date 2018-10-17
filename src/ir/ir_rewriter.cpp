@@ -327,7 +327,33 @@ void IRRewriter::visit(const Function* op) {
     stmt = op;
   }
   else {
-    stmt = Function::make(op->name, outputs, inputs, body);
+    stmt = Function::make(op->name, outputs, inputs, body, op->accelerator);
+  }
+}
+
+void IRRewriter::visit(const KernelLaunch* op) {
+  vector<Expr> inputs;
+  vector<Expr> outputs;
+  bool inputOutputsSame = true;
+  for (auto& input : op->inputs) {
+    Expr rewrittenInput = rewrite(input);
+    inputs.push_back(rewrittenInput);
+    if (rewrittenInput != input) {
+      inputOutputsSame = false;
+    }
+  }
+  for (auto& output : op->outputs) {
+    Expr rewrittenOutput = rewrite(output);
+    outputs.push_back(rewrittenOutput);
+    if (rewrittenOutput != output) {
+      inputOutputsSame = false;
+    }
+  }
+  if (inputOutputsSame) {
+    stmt = op;
+  }
+  else {
+    stmt = KernelLaunch::make(op->kernel_name, outputs, inputs, op->accelerator);
   }
 }
 

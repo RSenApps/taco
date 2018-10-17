@@ -44,7 +44,7 @@ public:
   virtual ~LowererImpl() = default;
 
   /// Lower an index statement to an IR function.
-  ir::Stmt lower(IndexStmt stmt, std::string name,  bool assemble, bool compute, bool accelerator);
+  ir::Stmt lower(IndexStmt stmt, std::string name,  bool assemble, bool compute, bool accelerator, bool kernelLaunch);
 
 protected:
 

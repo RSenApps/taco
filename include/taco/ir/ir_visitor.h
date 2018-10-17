@@ -35,6 +35,7 @@ struct While;
 struct Block;
 struct Scope;
 struct Function;
+struct KernelLaunch;
 struct VarDecl;
 struct Assign;
 struct Allocate;
@@ -79,6 +80,7 @@ public:
   virtual void visit(const Block*) = 0;
   virtual void visit(const Scope*) = 0;
   virtual void visit(const Function*) = 0;
+  virtual void visit(const KernelLaunch*) = 0;
   virtual void visit(const VarDecl*) = 0;
   virtual void visit(const Assign*) = 0;
   virtual void visit(const Allocate*) = 0;
@@ -126,6 +128,7 @@ public:
   virtual void visit(const Block* op);
   virtual void visit(const Scope* op);
   virtual void visit(const Function* op);
+  virtual void visit(const KernelLaunch* op);
   virtual void visit(const VarDecl* op);
   virtual void visit(const Assign* op);
   virtual void visit(const Allocate* op);

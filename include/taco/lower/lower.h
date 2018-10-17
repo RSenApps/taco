@@ -43,7 +43,7 @@ private:
 /// statement.
 ir::Stmt lower(IndexStmt stmt, std::string name,
                bool assemble=true, bool compute=true, bool accelerator=false,
-               Lowerer lowerer=Lowerer());
+               bool kernelLaunch=false, Lowerer lowerer=Lowerer());
 
 /// Checks whether the an index statement can be lowered to C code.  If the
 /// statement cannot be lowered and a `reason` string is provided then it is

@@ -179,6 +179,9 @@ void IRVisitor::visit(const Function* op) {
   op->body.accept(this);
 }
 
+void IRVisitor::visit(const KernelLaunch* op) {
+}
+
 void IRVisitor::visit(const VarDecl* op) {
   op->rhs.accept(this);
 }

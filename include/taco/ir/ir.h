@@ -49,6 +49,7 @@ enum class IRNodeType {
   Block,
   Scope,
   Function,
+  KernelLaunch,
   VarDecl,
   VarAssign,
   Allocate,
@@ -603,6 +604,20 @@ public:
                    Stmt body, bool accelerator=false);
   
   static const IRNodeType _type_info = IRNodeType::Function;
+};
+
+struct KernelLaunch : public StmtNode<KernelLaunch> {
+public:
+  std::string kernel_name;
+  std::vector<Expr> inputs;
+  std::vector<Expr> outputs;
+  bool accelerator;
+  
+  static Stmt make(std::string kernel_name,
+                  std::vector<Expr> outputs, std::vector<Expr> inputs,
+                  bool accelerator);
+
+  static const IRNodeType _type_info = IRNodeType::KernelLaunch;
 };
 
 /** Declaring and initializing a Var */

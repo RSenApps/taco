@@ -493,7 +493,9 @@ void CodeGen_C::visit(const Function* func) {
   varMap = varFinder.varMap;
 
   // Print variable declarations
-  out << printDecls(varFinder.varDecls, func->inputs, func->outputs) << endl;
+  if (!varFinder.varDecls.empty()) {
+    out << printDecls(varFinder.varDecls, func->inputs, func->outputs) << endl;
+  }
 
   // output body
   print(func->body);

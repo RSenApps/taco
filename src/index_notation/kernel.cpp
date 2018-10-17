@@ -111,9 +111,9 @@ Kernel compile(IndexStmt stmt) {
 
   shared_ptr<ir::Module> module(new ir::Module);
   module->addFunction(lower(stmt, "assemble", true, false));
-  module->addFunction(lower(stmt, "compute",  false, true));
   // TODO: If GPU
-  module->addFunction(lower(stmt, "computeKernel",  false, true, true));
+  module->addFunction(lower(stmt, "computeKernel",  false, true, true, false));
+  module->addFunction(lower(stmt, "compute",  false, true, true, true));
   module->addFunction(lower(stmt, "evaluate", true, true));
   module->compile();
 

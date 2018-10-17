@@ -54,6 +54,7 @@ protected:
   virtual void visit(const Block*);
   virtual void visit(const Scope*);
   virtual void visit(const Function*);
+  virtual void visit(const KernelLaunch*);
   virtual void visit(const VarDecl*);
   virtual void visit(const Assign*);
   virtual void visit(const Allocate*);

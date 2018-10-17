@@ -418,6 +418,16 @@ void IRPrinter::visit(const Function* op) {
   stream << "}";
 }
 
+void IRPrinter::visit(const KernelLaunch* op) {
+  doIndent();
+  stream << op->kernel_name;
+  stream << "(";
+  acceptJoin(this, stream, op->outputs, ", ");
+  if (op->outputs.size() > 0 && op->inputs.size()) stream << ", ";
+  acceptJoin(this, stream, op->inputs, ", ");
+  stream << ");" << endl;
+}
+
 void IRPrinter::visit(const VarDecl* op) {
   doIndent();
   stream << keywordString(util::toString(op->var.type())) << " ";

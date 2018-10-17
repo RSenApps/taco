@@ -688,8 +688,9 @@ int main(int argc, char* argv[]) {
       shared_ptr<ir::Module> module(new ir::Module);
       TOOL_BENCHMARK_TIMER(
         assemble = lower(stmt, "assemble", true, false);
-        compute = lower(stmt, "compute",  false, true);
-        computeKernel = lower(stmt, "computeKernel",  false, true, true);
+        // TODO: if GPU
+        compute = lower(stmt, "compute",  false, true, true, true);
+        computeKernel = lower(stmt, "computeKernel",  false, true, true, false);
         evaluate = lower(stmt, "evaluate", true, true);
           
         module->addFunction(assemble);
@@ -740,6 +741,7 @@ int main(int argc, char* argv[]) {
 
     if (computeKernel.defined()) {
       printer.print(computeKernel);
+      cout << endl << endl;
     }
 
     if (compute.defined()) {
@@ -772,6 +774,11 @@ int main(int argc, char* argv[]) {
 
     if (assemble.defined() ) {
       codegen.print(assemble);
+      cout << endl << endl;
+    }
+
+    if (computeKernel.defined() ) {
+      codegen.print(computeKernel);
       cout << endl << endl;
     }
 
