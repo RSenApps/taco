@@ -53,21 +53,23 @@ protected:
 
 
   /// Lower a forall statement.
-  virtual ir::Stmt lowerForall(Forall forall);
+  virtual ir::Stmt lowerForall(Forall forall, bool bodyOnly=false);
 
   /// Lower a forall that iterates over all the coordinates in the forall index
   /// var's dimension, and locates tensor positions from the locate iterators.
   virtual ir::Stmt lowerForallDimension(Forall forall,
                                         std::vector<Iterator> locaters,
                                         std::vector<Iterator> inserters,
-                                        std::vector<Iterator> appenders);
+                                        std::vector<Iterator> appenders,
+                                        bool bodyOnly);
 
   /// Lower a forall that iterates over the coordinates in the iterator, and
   /// locates tensor positions from the locate iterators.
   virtual ir::Stmt lowerForallCoordinate(Forall forall, Iterator iterator,
                                          std::vector<Iterator> locaters,
                                          std::vector<Iterator> inserters,
-                                         std::vector<Iterator> appenders);
+                                         std::vector<Iterator> appenders,
+                                         bool bodyOnly);
 
   /// Lower a forall that iterates over the positions in the iterator, accesses
   /// the iterators coordinate, and locates tensor positions from the locate
@@ -75,10 +77,11 @@ protected:
   virtual ir::Stmt lowerForallPosition(Forall forall, Iterator iterator,
                                        std::vector<Iterator> locaters,
                                        std::vector<Iterator> inserters,
-                                       std::vector<Iterator> appenders);
+                                       std::vector<Iterator> appenders,
+                                       bool bodyOnly);
 
   /// Lower a forall that merges multiple iterators.
-  virtual ir::Stmt lowerForallMerge(Forall forall, MergeLattice lattice);
+  virtual ir::Stmt lowerForallMerge(Forall forall, MergeLattice lattice, bool bodyOnly);
 
   /// Lower a merge lattice to while loops.
   virtual ir::Stmt lowerMergeLoops(ir::Expr coordinate, IndexStmt stmt,
