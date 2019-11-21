@@ -15,7 +15,7 @@ bool should_use_CUDA_codegen() {
 }
 
 bool should_use_CUDA_unified_memory() {
-  return CUDA_unified_memory_enabled;
+  return false; // TODO CUDA_unified_memory_enabled;
 }
 
 void set_CUDA_codegen_enabled(bool enabled) {

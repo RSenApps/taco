@@ -155,6 +155,53 @@ const string gpuAssertMacro =
   "  } else {\n"
   "    atomicAdd(&array[index], val);\n"
   "  }\n"
+  "}\n"
+  "taco_tensor_t *copy_to_device_tensor(taco_tensor_t *host_tensor, taco_tensor_t *device_tensor_copy) {\n"
+  "  taco_tensor_t *device_tensor;\n"
+  "  cudaMalloc((void **) &device_tensor, sizeof(taco_tensor_t));\n"
+  "  device_tensor_copy->order = host_tensor->order;\n"
+  "  cudaMalloc((void **) &device_tensor_copy->dimensions, host_tensor->order * sizeof(int32_t));\n"
+  "  cudaMalloc((void **) &device_tensor_copy->mode_ordering, host_tensor->order * sizeof(int32_t));\n"
+  "  cudaMalloc((void **) &device_tensor_copy->mode_types, host_tensor->order * sizeof(taco_mode_t));\n"
+  "  cudaMalloc((void **) &device_tensor_copy->indices, host_tensor->order * sizeof(uint8_t**));"
+  "  device_tensor_copy->vals_size = host_tensor->vals_size;\n"
+  "  cudaMalloc((void **) &device_tensor_copy->vals, host_tensor->vals_size);\n"
+  "  device_tensor_copy->csize = host_tensor->csize;\n"
+  "\n"
+  "  uint8_t ***copied_indices = (uint8_t ***) malloc(host_tensor->order * sizeof(uint8_t**));"
+  "  for (int32_t i = 0; i < host_tensor->order; i++) {\n"
+  "    switch (host_tensor->mode_types[i]) {\n"
+  "      case taco_mode_dense:\n"
+  "        cudaMalloc((void **) &(copied_indices[i]), 1 * sizeof(uint8_t **));\n"
+  "        break;\n"
+  "      case taco_mode_sparse:\n"
+  "        cudaMalloc((void **) &(copied_indices[i]), 2 * sizeof(uint8_t **));\n"
+  "        break;\n"
+  "    }\n"
+  "  }\n"
+  "\n"
+  "  cudaMemcpy(device_tensor_copy->indices, copied_indices, host_tensor->order * sizeof(uint8_t**), cudaMemcpyHostToDevice);\n"
+  "  cudaMemcpy(device_tensor, device_tensor_copy, sizeof(taco_tensor_t), cudaMemcpyHostToDevice);\n"
+  "  cudaMemcpy(device_tensor_copy->dimensions, host_tensor->dimensions, host_tensor->order * sizeof(int32_t), cudaMemcpyHostToDevice);\n"
+  "  cudaMemcpy(device_tensor_copy->mode_ordering, host_tensor->mode_ordering, host_tensor->order * sizeof(int32_t), cudaMemcpyHostToDevice);\n"
+  "  cudaMemcpy(device_tensor_copy->mode_types, host_tensor->mode_types, host_tensor->order * sizeof(taco_mode_t), cudaMemcpyHostToDevice);\n"
+  "\n"
+  "  for (int32_t i = 0; i < host_tensor->order; i++) {\n"
+  "    switch (host_tensor->mode_types[i]) {\n"
+  "      case taco_mode_dense:\n"
+  "        cudaMemcpy(copied_indices[i], host_tensor->indices[i], 1 * sizeof(uint8_t **), cudaMemcpyHostToDevice);\n"
+  "        break;\n"
+  "      case taco_mode_sparse:\n"
+  "        cudaMemcpy(copied_indices[i], host_tensor->indices[i], 2 * sizeof(uint8_t **), cudaMemcpyHostToDevice);\n"
+  "        break;\n"
+  "    }\n"
+  "  }\n"
+  "  return device_tensor;\n"
+  "}\n"
+  "\n"
+  "taco_tensor_t *copy_to_host_tensor(taco_tensor_t *host_tensor, taco_tensor_t *device_tensor_copy) {\n"
+  "  cudaMemcpy(host_tensor->vals, device_tensor_copy->vals, host_tensor->vals_size, cudaMemcpyDeviceToHost);\n"
+  "  return host_tensor;\n"
   "}\n";
 
 const std::string blue="\033[38;5;67m";
@@ -588,7 +635,7 @@ void CodeGen_CUDA::printDeviceFuncCall(const vector<pair<string, Expr>> currentP
     taco_iassert(currentParameters[i].second.as<Var>()) << "Unable to convert output " << currentParameters[i].second
                                                         << " to Var";
     string varName = currentParameters[i].first;
-    stream << delimiter << varName;
+    stream << delimiter << varName << "_device";
 
     delimiter = ", ";
   }
@@ -1067,6 +1114,33 @@ void CodeGen_CUDA::visit(const Allocate* op) {
     }
     return;
   }
+
+  if (true) { // TODO: not unified memory
+    // c alloc
+    string elementType = printCUDAType(op->var.type(), false);
+
+    doIndent();
+    op->var.accept(this);
+    stream << " = (";
+    stream << elementType << "*";
+    stream << ")";
+    if (op->is_realloc) {
+      stream << "realloc(";
+      op->var.accept(this);
+      stream << ", ";
+    }
+    else {
+      stream << "malloc(";
+    }
+    stream << "sizeof(" << elementType << ")";
+    stream << " * ";
+    op->num_elements.accept(this);
+    stream << ");";
+    stream << endl;
+    return;
+  }
+
+
   string variable_name;
   if (op->is_realloc) {
     // cuda doesn't have realloc
@@ -1127,7 +1201,12 @@ void CodeGen_CUDA::visit(const Free* op) {
     return;
   }
   doIndent();
-  stream << "cudaFree(";
+  if (true) { // TODO: don't use unified memory
+    stream << "free(";
+  }
+  else {
+    stream << "cudaFree(";
+  }
   parentPrecedence = Precedence::TOP;
   op->var.accept(this);
   stream << ");";
@@ -1169,31 +1248,33 @@ void CodeGen_CUDA::visit(const VarDecl* op) {
     // gpuErrchk(cudaMallocManaged((void**)&x_ptr, sizeof(type));
     // type &x = *x_ptr;
     // x = rhs;
-    doIndent();
-    stream << keywordString(printCUDAType(op->var.type(), true)) << " ";
-    string varName = varNameGenerator.getUniqueName(util::toString(op->var));
-    varNames.insert({op->var, varName});
-    op->var.accept(this);
-    stream << "_ptr;" << endl;
-    parentPrecedence = Precedence ::TOP;
+    if (false) {
+      doIndent();
+      stream << keywordString(printCUDAType(op->var.type(), true)) << " ";
+      string varName = varNameGenerator.getUniqueName(util::toString(op->var));
+      varNames.insert({op->var, varName});
+      op->var.accept(this);
+      stream << "_ptr;" << endl;
+      parentPrecedence = Precedence::TOP;
 
-    doIndent();
-    stream << "gpuErrchk(cudaMallocManaged((void**)&";
-    op->var.accept(this);
-    stream << "_ptr, sizeof(" << keywordString(printCUDAType(op->var.type(), false)) << ")));" << endl;
+      doIndent();
+      stream << "gpuErrchk(cudaMallocManaged((void**)&";
+      op->var.accept(this);
+      stream << "_ptr, sizeof(" << keywordString(printCUDAType(op->var.type(), false)) << ")));" << endl;
 
-    doIndent();
-    stream << keywordString(printCUDAType(op->var.type(), false)) << "& ";
-    op->var.accept(this);
-    stream << " = *";
-    op->var.accept(this);
-    stream << "_ptr;" << endl;
+      doIndent();
+      stream << keywordString(printCUDAType(op->var.type(), false)) << "& ";
+      op->var.accept(this);
+      stream << " = *";
+      op->var.accept(this);
+      stream << "_ptr;" << endl;
 
-    doIndent();
-    op->var.accept(this);
-    stream << " = ";
-    op->rhs.accept(this);
-    stream << ";" << endl;
+      doIndent();
+      op->var.accept(this);
+      stream << " = ";
+      op->rhs.accept(this);
+      stream << ";" << endl;
+    }
   }
   else {
     bool is_ptr = false;
@@ -1312,6 +1393,24 @@ void CodeGen_CUDA::visit(const Call* op) {
 }
 
 void CodeGen_CUDA::visit(const Assign* op) {
+  if (!emittedTimerStartCode && isa<ir::Call>(op->rhs) && std::string(funcName).find("compute") == 0 /* starts with compute */) {
+    doIndent();
+    stream << "taco_tensor_t y_device_copy;" << endl;
+    doIndent();
+    stream << "taco_tensor_t *y_device = copy_to_device_tensor(y, &y_device_copy);" << endl;
+    doIndent();
+    stream << "taco_tensor_t A_device_copy;" << endl;
+    doIndent();
+    stream << "taco_tensor_t *A_device = copy_to_device_tensor(A, &A_device_copy);" << endl;
+    doIndent();
+    stream << "taco_tensor_t x_device_copy;" << endl;
+    doIndent();
+    stream << "taco_tensor_t *x_device = copy_to_device_tensor(x, &x_device_copy);" << endl;
+    doIndent();
+    stream << "int32_t *i_blockStarts_device;" << endl;
+    doIndent();
+    stream << "cudaMalloc((void **) &i_blockStarts_device, sizeof(int32_t) * (A2_pos[A1_dimension] + 2047) / 2048 + 1);" << endl;
+  }
   if (GEN_TIMING_CODE && !emittedTimerStartCode && isa<ir::Call>(op->rhs)) {
     if (to<ir::Call>(op->rhs)->func == "taco_binarySearchBeforeBlockLaunch") {
       doIndent();
@@ -1327,6 +1426,7 @@ void CodeGen_CUDA::visit(const Assign* op) {
       doIndent();
       stream << "cudaEventRecord(event1,0);" << endl;
       emittedTimerStartCode = true;
+      return;
     }
   }
 

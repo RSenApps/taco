@@ -1331,7 +1331,7 @@ Stmt LowererImpl::lowerWhere(Where where) {
   whereConsumers.pop_back();
   whereTemps.pop_back();
   whereTempsToResult.erase(where.getTemporary());
-  return Block::make(initializeTemporary, producer, capturedLocatePos, consumer, freeTemporary);
+  return Block::make(initializeTemporary, producer, capturedLocatePos, consumer/* TODO:, freeTemporary*/);
 }
 
 
@@ -1885,8 +1885,8 @@ Stmt LowererImpl::zeroInitValues(Expr tensor, Expr begin, Expr size) {
                        to<ir::Literal>(size)->getIntValue() < (1 << 10))
                       ? LoopKind::Serial : LoopKind::Static_Chunked;
   if (should_use_CUDA_codegen()) {
-    return ir::VarDecl::make(ir::Var::make("status", Int()),
-                                    ir::Call::make("cudaMemset", {values, ir::Literal::make(0, Int()), ir::Sub::make(upper, lower)}, Int()));
+    // TODO: return ir::VarDecl::make(ir::Var::make("status", Int()),
+            //                        ir::Call::make("cudaMemset", {values, ir::Literal::make(0, Int()), ir::Sub::make(upper, lower)}, Int()));
   }
   return For::make(p, lower, upper, 1, zeroInit, parallel);
 }

@@ -118,7 +118,8 @@ string CodeGen::printCAlloc(string pointer, string size) {
 }
 
 string CodeGen::printCUDAAlloc(string pointer, string size) {
-  return "gpuErrchk(cudaMallocManaged((void**) &" + pointer + ", " + size + "));";
+  return printCAlloc(pointer, size);
+  // TODO: return "gpuErrchk(cudaMallocManaged((void**) &" + pointer + ", " + size + "));";
 }
 
 string CodeGen::printAlloc(string pointer, string size) {
