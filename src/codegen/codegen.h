@@ -55,6 +55,7 @@ protected:
   std::string genUniqueName(std::string name);
   void doIndentStream(std::stringstream &stream);
   CodeGenType codeGenType;
+  bool isHostFunction=true;
 
 private:
   virtual std::string restrictKeyword() const { return ""; }

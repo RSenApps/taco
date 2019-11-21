@@ -202,13 +202,25 @@ string CodeGen::unpackTensorProperty(string varname, const GetProperty* op,
   auto tensor = op->tensor.as<Var>();
   if (op->property == TensorProperty::Values) {
     // for the values, it's in the last slot
-    ret << printType(tensor->type, true);
-    ret << " " << restrictKeyword() << " " << varname << " = (" << printType(tensor->type, true) << ")(";
-    ret << tensor->name << "->vals);\n";
-    return ret.str();
+
+    if (isHostFunction) {
+      ret << printType(tensor->type, true) << " " << varname << " = global_" << varname << "_host;\n";
+      return ret.str();
+    }
+    else {
+      ret << printType(tensor->type, true) << " " << varname << " = global_" << varname << "_device;\n";
+      return ret.str();
+    }
+//    ret << printType(tensor->type, true);
+//    ret << " " << restrictKeyword() << " " << varname << " = (" << printType(tensor->type, true) << ")(";
+//    ret << tensor->name << "->vals);\n";
+//    return ret.str();
   } else if (op->property == TensorProperty::ValuesSize) {
-    ret << "int " << varname << " = " << tensor->name << "->vals_size;\n";
+    ret << "int" << " " << varname << " = global_" << varname << ";\n";
     return ret.str();
+
+//    ret << "int " << varname << " = " << tensor->name << "->vals_size;\n";
+//    return ret.str();
   }
 
   string tp;
@@ -218,15 +230,28 @@ string CodeGen::unpackTensorProperty(string varname, const GetProperty* op,
   // all others are int*
   if (op->property == TensorProperty::Dimension) {
     tp = "int";
-    ret << tp << " " << varname << " = (int)(" << tensor->name
-        << "->dimensions[" << op->mode << "]);\n";
+    ret << tp << " " << varname << " = global_" << varname << ";\n";
+    return ret.str();
+
+//    ret << tp << " " << varname << " = (int)(" << tensor->name
+//        << "->dimensions[" << op->mode << "]);\n";
   } else {
     taco_iassert(op->property == TensorProperty::Indices);
     tp = "int*";
     auto nm = op->index;
-    ret << tp << " " << restrictKeyword() << " " << varname << " = ";
-    ret << "(int*)(" << tensor->name << "->indices[" << op->mode;
-    ret << "][" << nm << "]);\n";
+
+    if (isHostFunction) {
+      ret << tp << " " << varname << " = global_" << varname << "_host;\n";
+      return ret.str();
+    }
+    else {
+      ret << tp << " " << varname << " = global_" << varname << "_device;\n";
+      return ret.str();
+    }
+//
+//    ret << tp << " " << restrictKeyword() << " " << varname << " = ";
+//    ret << "(int*)(" << tensor->name << "->indices[" << op->mode;
+//    ret << "][" << nm << "]);\n";
   }
 
   return ret.str();

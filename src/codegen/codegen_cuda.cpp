@@ -1082,7 +1082,7 @@ void CodeGen_CUDA::visit(const Allocate* op) {
   }
 
   doIndent();
-  stream << "gpuErrchk(cudaMallocManaged((void**)&";
+  stream << "gpuErrchk(cudaMalloc((void**)&";
   if (op->is_realloc) {
     stream << variable_name;
   }
@@ -1285,8 +1285,16 @@ void CodeGen_CUDA::visit(const Literal* op) {
 }
 
 void CodeGen_CUDA::visit(const Call* op) {
-  if (op->func == "cudaMemset") {
-    IRPrinter::visit(op);
+  if (op->func == "cudaMemset" || op->func == "taco_binarySearchBeforeBlockLaunch") {
+    stream << op->func << "(global_";
+    op->args[0].accept(this);
+    stream << "_device";
+
+    for (size_t i=1; i < op->args.size(); ++i) {
+      stream << ", ";
+      op->args[i].accept(this);
+    }
+    stream << ")";
     return;
   }
   stream << op->func << "(";
