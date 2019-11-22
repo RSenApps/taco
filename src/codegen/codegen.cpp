@@ -230,9 +230,14 @@ string CodeGen::unpackTensorProperty(string varname, const GetProperty* op,
   // all others are int*
   if (op->property == TensorProperty::Dimension) {
     tp = "int";
-    ret << tp << " " << varname << " = global_" << varname << ";\n";
-    return ret.str();
-
+    if (isHostFunction) {
+      ret << tp << " " << varname << " = global_" << varname << "_host;\n";
+      return ret.str();
+    }
+    else {
+      ret << tp << " " << varname << " = global_" << varname << ";\n";
+      return ret.str();
+    }
 //    ret << tp << " " << varname << " = (int)(" << tensor->name
 //        << "->dimensions[" << op->mode << "]);\n";
   } else {
