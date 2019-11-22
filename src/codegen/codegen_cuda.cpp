@@ -790,8 +790,8 @@ void CodeGen_CUDA::visit(const Function* func) {
   print(func->body);
 
   // output repack only if we allocated memory
-  if (checkForAlloc(func))
-    out << endl << printPack(varFinder.outputProperties, func->outputs);
+  //if (checkForAlloc(func))
+  //  out << endl << printPack(varFinder.outputProperties, func->outputs);
 
   if (emittingCoroutine) {
     out << printCoroutineFinish(numYields, funcName);
@@ -1288,7 +1288,7 @@ void CodeGen_CUDA::visit(const Call* op) {
   if (op->func == "cudaMemset" || op->func == "taco_binarySearchBeforeBlockLaunch") {
     stream << op->func << "(global_";
     op->args[0].accept(this);
-    stream << "_device";
+    stream << "_host_copy";
 
     for (size_t i=1; i < op->args.size(); ++i) {
       stream << ", ";
