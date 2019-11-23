@@ -224,7 +224,7 @@ IndexStmt scheduleTTVGPU(IndexStmt stmt, Tensor<double> B, IndexExpr precomputed
           .parallelize(thread, PARALLEL_UNIT::GPU_THREAD, OUTPUT_RACE_STRATEGY::ATOMICS);
 }
 
-IndexStmt scheduleMTTKRPGPU(IndexStmt stmt, Tensor<double> B, int NNZ_PER_WARP=8*32, int BLOCK_SIZE=256, int CO_FACTOR=4) {
+IndexStmt scheduleMTTKRPGPU(IndexStmt stmt, Tensor<float> B, int NNZ_PER_WARP=8*32, int BLOCK_SIZE=256, int CO_FACTOR=4) {
   int NNZ_PER_TB = NNZ_PER_WARP * (BLOCK_SIZE / WARP_SIZE);
   IndexVar kl("kl"), f("f"), fpos("fpos"), block("block"), fpos1("fpos1"), warp("warp"), nnz("nnz"), dense_val_unbounded("dense_val_unbounded"), dense_val("dense_val"), thread("thread");
   return stmt.reorder({i,k,l,j})
@@ -1285,7 +1285,7 @@ TEST(generate_evaluation_files, gpu) {
   vector<vector<int>> spmm_parameters = {}; // {NNZ_PER_WARP, BLOCK_SIZE, CO_FACTOR}
 
   // 4, 8, ... 32 for NNZ_PER_WARP 512 block size
-  for (int i = 4; i <= 32; i += 4) {
+  for (int i = 4; i <= 32; i += 1) {
     spmm_parameters.push_back({i,512, 1});
   }
 
@@ -1455,14 +1455,14 @@ TEST(generate_evaluation_files, gpu) {
   {
     stringstream source;
     std::shared_ptr<ir::CodeGen> codegen = ir::CodeGen::init_default(source, ir::CodeGen::ImplementationGen);
-    Tensor<double> B("B", {NUM_I, NUM_K, NUM_L}, {Sparse, Sparse, Sparse});
+    Tensor<float> B("B", {NUM_I, NUM_K, NUM_L}, {Sparse, Sparse, Sparse});
 
     bool isFirst = true;
     for (auto paramSet : mttkrp_parameters) {
       int NUM_J = paramSet[2] * WARP_SIZE;
-      Tensor<double> A("A", {NUM_I, NUM_J}, {Dense, Dense});
-      Tensor<double> C("C", {NUM_K, NUM_J}, {Dense, Dense});
-      Tensor<double> D("D", {NUM_L, NUM_J}, {Dense, Dense});
+      Tensor<float> A("A", {NUM_I, NUM_J}, {Dense, Dense});
+      Tensor<float> C("C", {NUM_K, NUM_J}, {Dense, Dense});
+      Tensor<float> D("D", {NUM_L, NUM_J}, {Dense, Dense});
       A(i,j) = B(i,k,l) * C(k,j) * D(l,j);
       IndexStmt stmt = A.getAssignment().concretize();
       IndexStmt scheduled = scheduleMTTKRPGPU(stmt, B, paramSet[0], paramSet[1], paramSet[2]);
